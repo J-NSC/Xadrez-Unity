@@ -12,7 +12,7 @@ public enum ChessPieceType{
     King = 6
 }
 
-public class XadrezPeca : MonoBehaviour
+public class ChessPiece : MonoBehaviour
 {
     public int team;
     public int currentX;
@@ -47,7 +47,7 @@ public class XadrezPeca : MonoBehaviour
         }
     }
 
-    public virtual List<Vector2Int> GetAvaliabeMoves(ref XadrezPeca[,] board, int tileCountX, int tileCountY){
+    public virtual List<Vector2Int> GetAvaliabeMoves(ref ChessPiece[,] board, int tileCountX, int tileCountY){
         List<Vector2Int> r = new List<Vector2Int>();
 
         r.Add(new Vector2Int(3,3));
@@ -58,7 +58,7 @@ public class XadrezPeca : MonoBehaviour
         return r; 
     }
 
-    public virtual SpecialMove GetSpecialMoves(ref XadrezPeca[,] board, ref List<Vector2Int[]> moveList, ref List<Vector2Int> availableMoves){
+    public virtual SpecialMove GetSpecialMoves(ref ChessPiece[,] board, ref List<Vector2Int[]> moveList, ref List<Vector2Int> availableMoves){
         return SpecialMove.None;
     }
 

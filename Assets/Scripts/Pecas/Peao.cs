@@ -2,9 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Peao : XadrezPeca
+public class Peao : ChessPiece
 {
-    public override List<Vector2Int>GetAvaliabeMoves(ref XadrezPeca[,]board, int tileCountX , int tileCountY ){
+    public override List<Vector2Int>GetAvaliabeMoves(ref ChessPiece[,]board, int tileCountX , int tileCountY ){
         List<Vector2Int> r = new List<Vector2Int>();
 
         int direction = (team == 0) ? 1: -1;
@@ -32,7 +32,7 @@ public class Peao : XadrezPeca
     }
 
 
-    public override SpecialMove GetSpecialMoves(ref XadrezPeca[,] board, ref List<Vector2Int[]> moveList, ref List<Vector2Int> availableMoves){
+    public override SpecialMove GetSpecialMoves(ref ChessPiece[,] board, ref List<Vector2Int[]> moveList, ref List<Vector2Int> availableMoves){
         int direction = (team == 0) ? 1 :-1;
 
         if ((team == 0 && currentY == 6) || (team == 1 && currentY == 1))

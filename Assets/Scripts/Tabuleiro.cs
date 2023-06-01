@@ -30,11 +30,11 @@ public class Tabuleiro : MonoBehaviour
 
 
     // variaveis 
-    private XadrezPeca[,] chessPiece;
-    private XadrezPeca currentlyDragging;
+    private ChessPiece[,] chessPiece;
+    private ChessPiece currentlyDragging;
     private List<Vector2Int> availableMoves = new List<Vector2Int>();
-    private List<XadrezPeca>  deadWhites = new List<XadrezPeca>();
-    private List<XadrezPeca>  deadBlacks = new List<XadrezPeca>();
+    private List<ChessPiece>  deadWhites = new List<ChessPiece>();
+    private List<ChessPiece>  deadBlacks = new List<ChessPiece>();
     private List<Vector2Int[]> moveList= new List<Vector2Int[]>(); 
     private const int TILE_COUNT_X = 8;
     private const int TILE_COUNT_Y = 8;
@@ -62,7 +62,6 @@ public class Tabuleiro : MonoBehaviour
             currentCamara = Camera.main;
             return;
         }
-
         RaycastHit info;
         Ray ray = currentCamara.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out info, 100, LayerMask.GetMask("Tile", "Highlight", "Hover")))
@@ -178,7 +177,7 @@ public class Tabuleiro : MonoBehaviour
     // gera peças 
     private void spwanAllPieces()
     {
-        chessPiece = new XadrezPeca[TILE_COUNT_X, TILE_COUNT_Y];
+        chessPiece = new ChessPiece[TILE_COUNT_X, TILE_COUNT_Y];
 
         int whiteTeam = 0, blackTeam = 1;
 
@@ -211,10 +210,10 @@ public class Tabuleiro : MonoBehaviour
         }
     }
 
-    private XadrezPeca spawSinglePiece(ChessPieceType type, int team)
+    private ChessPiece spawSinglePiece(ChessPieceType type, int team)
     
     {
-        XadrezPeca cp = Instantiate(prefabs[(int)type - 1], transform).GetComponent<XadrezPeca>();
+        ChessPiece cp = Instantiate(prefabs[(int)type - 1], transform).GetComponent<ChessPiece>();
 
         cp.type = type;
         cp.team = team;
@@ -257,14 +256,14 @@ public class Tabuleiro : MonoBehaviour
         
     }
 
-    private bool moveTo(XadrezPeca cp, int x, int y){
+    private bool moveTo(ChessPiece cp, int x, int y){
         if(!ContainsValidMove(ref availableMoves, new Vector2Int(x, y)))
             return false;
 
         Vector2Int previousPosition = new Vector2Int(cp.currentX, cp.currentY);
 
         if(chessPiece[x,y] != null){
-            XadrezPeca ocp = chessPiece[x,y];
+            ChessPiece ocp = chessPiece[x,y];
 
             if(cp.team == ocp.team){
                 return false;
@@ -298,7 +297,8 @@ public class Tabuleiro : MonoBehaviour
         moveList.Add(new Vector2Int[]{previousPosition, new Vector2Int(x,y)} );
 
         ProcessSpecialMove();
-
+        if(CheckForCheckmate())
+            CheckMate(cp.team);
         return true ;
     }
 
@@ -308,6 +308,8 @@ public class Tabuleiro : MonoBehaviour
         {
             for (int y = 0; y < TILE_COUNT_Y; y++)
             {
+                // Debug.Log(x + " + " + y);
+
                 if (tiles[x, y] == hitInfo)
                 {
                     return new Vector2Int(x, y);
@@ -385,6 +387,8 @@ public class Tabuleiro : MonoBehaviour
         Application.Quit();
     }
 
+
+
     // Special moves
 
     private void ProcessSpecialMove(){
@@ -392,8 +396,8 @@ public class Tabuleiro : MonoBehaviour
             var newPawn = moveList[moveList.Count - 1];
             var targetPawnPosition = moveList[moveList.Count - 2];
 
-            XadrezPeca myPawn = chessPiece[newPawn[1].x, newPawn[1].y];
-            XadrezPeca enemyPaw = chessPiece[targetPawnPosition[1].x, targetPawnPosition[1].y];
+            ChessPiece myPawn = chessPiece[newPawn[1].x, newPawn[1].y];
+            ChessPiece enemyPaw = chessPiece[targetPawnPosition[1].x, targetPawnPosition[1].y];
 
             if (myPawn.currentX == enemyPaw.currentX)
             {
@@ -427,7 +431,7 @@ public class Tabuleiro : MonoBehaviour
             {
                 if (lastMove[1].y == 0) //branco
                 {
-                    XadrezPeca rook = chessPiece[0, 0];
+                    ChessPiece rook = chessPiece[0, 0];
                     chessPiece[3, 0] = rook;
                     positionSinglePieces(3,0);
                     chessPiece[0, 0] = null;
@@ -435,7 +439,7 @@ public class Tabuleiro : MonoBehaviour
                 }
                 else if (lastMove[1].y == 7) // preto
                 {
-                    XadrezPeca rook = chessPiece[0, 7];
+                    ChessPiece rook = chessPiece[0, 7];
                     chessPiece[3, 7] = rook;
                     positionSinglePieces(3, 7);
                     chessPiece[0, 7] = null;
@@ -445,7 +449,7 @@ public class Tabuleiro : MonoBehaviour
             {
                 if (lastMove[1].y == 0) //branco
                 {
-                    XadrezPeca rook = chessPiece[7, 0];
+                    ChessPiece rook = chessPiece[7, 0];
                     chessPiece[5, 0] = rook;
                     positionSinglePieces(5, 0);
                     chessPiece[7, 0] = null;
@@ -453,7 +457,7 @@ public class Tabuleiro : MonoBehaviour
                 }
                 else if (lastMove[1].y == 7) // preto
                 {
-                    XadrezPeca rook = chessPiece[7, 7];
+                    ChessPiece rook = chessPiece[7, 7];
                     chessPiece[5, 7] = rook;
                     positionSinglePieces(5, 7);
                     chessPiece[7, 7] = null;
@@ -464,13 +468,13 @@ public class Tabuleiro : MonoBehaviour
         if (specialMove == SpecialMove.Promotion)
         {
             Vector2Int[] lastMove = moveList[moveList.Count-1];
-            XadrezPeca targetPawn = chessPiece[lastMove[1].x ,lastMove[1].y];
+            ChessPiece targetPawn = chessPiece[lastMove[1].x ,lastMove[1].y];
 
             if (targetPawn.type == ChessPieceType.Pawn)
             {
                 if (targetPawn.team == 0 && lastMove[1].y == 7)
                 {
-                    XadrezPeca newQueen = spawSinglePiece(ChessPieceType.Queen, 0);
+                    ChessPiece newQueen = spawSinglePiece(ChessPieceType.Queen, 0);
                     newQueen.transform.position = chessPiece[lastMove[1].x, lastMove[1].y].transform.position;
                     Destroy(chessPiece[lastMove[1].x, lastMove[1].y].gameObject);
                     chessPiece[lastMove[1].x, lastMove[1].y] = newQueen;
@@ -479,7 +483,7 @@ public class Tabuleiro : MonoBehaviour
 
                 if (targetPawn.team == 1 && lastMove[1].y == 0)
                 {
-                    XadrezPeca newQueen = spawSinglePiece(ChessPieceType.Queen, 1);
+                    ChessPiece newQueen = spawSinglePiece(ChessPieceType.Queen, 1);
                     newQueen.transform.position = chessPiece[lastMove[1].x, lastMove[1].y].transform.position;
                     Destroy(chessPiece[lastMove[1].x, lastMove[1].y].gameObject);
                     chessPiece[lastMove[1].x, lastMove[1].y] = newQueen;
@@ -493,13 +497,128 @@ public class Tabuleiro : MonoBehaviour
 
     private void PreventCheck()
     {
-        XadrezPeca targetKing = null;
+        ChessPiece targetKing = null;
+        
 
         for (int x = 0; x < TILE_COUNT_X; x++)
             for (int y = 0; y < TILE_COUNT_Y; y++)
-                if(chessPiece[x, y].type == ChessPieceType.King && ){
-                
-                }
+                if(chessPiece[x, y] != null )
+                    if(chessPiece[x, y].type == ChessPieceType.King )
+                        if(chessPiece[x, y].team == currentlyDragging.team ) 
+                            targetKing =  chessPiece[x,y];
+
+        SimulateMoveForSinglePiece(currentlyDragging, ref availableMoves , targetKing);
     }
+
+    private void SimulateMoveForSinglePiece(ChessPiece cp, ref List<Vector2Int> moves, ChessPiece targeKing){
+        int actualX = cp.currentX;
+        int actualY = cp.currentY;
+
+        List<Vector2Int> movesToRemove = new List<Vector2Int>();
+
+        for(int i = 0; i < moves.Count; i++) {
+            int simX = moves[i].x;
+            int simY = moves[i].y;
+
+            Vector2Int kingPositionThisSim = new Vector2Int(targeKing.currentX, targeKing.currentY);
+
+            if(cp.type == ChessPieceType.King){
+                kingPositionThisSim = new Vector2Int(simX,simY);
+
+            }
+            
+            ChessPiece[,] simulation = new ChessPiece[TILE_COUNT_X,TILE_COUNT_Y];
+            List<ChessPiece> simAttackingPieces = new List<ChessPiece>();
+
+            
+            for (int x = 0; x < TILE_COUNT_X; x++){
+                for (int y = 0; y < TILE_COUNT_Y; y++){
+                    if(chessPiece[x, y] != null){
+                        simulation[x,y] = chessPiece[x,y];
+                        Debug.Log(simulation[x,y]);
+                        if(simulation[x,y].team != cp.team){
+                            simAttackingPieces.Add(simulation[x,y]);
+                        }
+                    }
+                }
+            }
+
+            simulation[actualX, actualY] = null;
+            cp.currentX = simX;
+            cp.currentY = simY;
+            simulation[simX,simY] = cp;
+
+            var deadpieces = simAttackingPieces.Find( c => c.currentX == simX && c.currentY == simY);
+
+            if(deadpieces != null)
+                simAttackingPieces.Remove(deadpieces);
+
+            List<Vector2Int> simMoves = new List<Vector2Int>();
+            for(int a = 0; a < simAttackingPieces.Count; a++) {
+                var pieceMove = simAttackingPieces[a].GetAvaliabeMoves(ref simulation, TILE_COUNT_X, TILE_COUNT_Y);
+
+                for(int b = 0; b < pieceMove.Count; b++) {
+                   simMoves.Add(pieceMove[b]); 
+                }
+            }
+
+            if(ContainsValidMove(ref simMoves, kingPositionThisSim)){
+                movesToRemove.Add(moves[i]);
+            }
+
+            cp.currentX = actualX;
+            cp.currentY = actualY;
+        }
+
+        for(int i = 0; i < movesToRemove.Count; i++) 
+            moves.Remove(movesToRemove[i]);
+        
+
+    }
+
+    private bool CheckForCheckmate(){
+        var lastMove = moveList[moveList.Count - 1];
+        int targetTeam = ((chessPiece[lastMove[1].x, lastMove[1].y]).team == 0 ) ? 1 : 0;
+        List<ChessPiece> attackingPieces = new List<ChessPiece>();
+        List<ChessPiece> defendingPieces = new List<ChessPiece>();
+        ChessPiece targetKing = null;
+        for (int x = 0; x < TILE_COUNT_X; x++){
+            for (int y = 0; y < TILE_COUNT_Y; y++)
+                if(chessPiece[x, y] != null ){
+                    if(chessPiece[x, y].team == targetTeam) {
+                        defendingPieces.Add(chessPiece[x,y]);
+                        if(chessPiece[x,y].type == ChessPieceType.King)
+                            targetKing = chessPiece[x,y];
+                    }else{
+                        attackingPieces.Add(chessPiece[x,y]);
+                    }
+                }
+        }
+
+        List<Vector2Int> currentAvailableMoves = new List<Vector2Int>();
+
+        for(int i = 0; i < attackingPieces.Count; i++) {
+                var pieceMove = attackingPieces[i].GetAvaliabeMoves(ref chessPiece, TILE_COUNT_X, TILE_COUNT_Y);
+
+                for(int b = 0; b < pieceMove.Count; b++) {
+                   currentAvailableMoves.Add(pieceMove[b]); 
+                }
+        }
+
+        if(ContainsValidMove(ref currentAvailableMoves, new Vector2Int(targetKing.currentX, targetKing.currentY))){
+            for(int i = 0; i < defendingPieces.Count; i++) {
+                List<Vector2Int> defendingMoves = defendingPieces[i].GetAvaliabeMoves(ref chessPiece, TILE_COUNT_X, TILE_COUNT_Y);
+                SimulateMoveForSinglePiece(defendingPieces[i], ref defendingMoves, targetKing);
+
+                if(defendingMoves.Count != 0 )
+                    return false;
+            }
+
+            return true;
+        }
+        return false;
+
+    }
+
 }
 

@@ -2,12 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Torre : XadrezPeca
+public class Torre : ChessPiece
 {
     // Start is called before the first frame update
     
 
-    public override List<Vector2Int> GetAvaliabeMoves(ref XadrezPeca[,] board, int tileCountX, int tileCountY){
+    public override List<Vector2Int> GetAvaliabeMoves(ref ChessPiece[,] board, int tileCountX, int tileCountY){
         List<Vector2Int> r = new List<Vector2Int>();
 
         

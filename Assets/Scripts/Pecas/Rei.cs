@@ -2,9 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Rei : XadrezPeca
+public class Rei : ChessPiece
 {
-    public override List<Vector2Int> GetAvaliabeMoves(ref XadrezPeca[,] board, int tileCountX, int tileCountY)
+    public override List<Vector2Int> GetAvaliabeMoves(ref ChessPiece[,] board, int tileCountX, int tileCountY)
     {
         
         List<Vector2Int> r = new List<Vector2Int>();
@@ -73,7 +73,7 @@ public class Rei : XadrezPeca
         return r;
     }
 
-    public override SpecialMove GetSpecialMoves(ref XadrezPeca[,] board, ref List<Vector2Int[]> moveList, ref List<Vector2Int> availableMoves)
+    public override SpecialMove GetSpecialMoves(ref ChessPiece[,] board, ref List<Vector2Int[]> moveList, ref List<Vector2Int> availableMoves)
     {
         SpecialMove r = SpecialMove.None;
         var kingMove = moveList.Find(m=> m[0].x == 4 && m[0].y == ((team == 0) ? 0 : 7));
