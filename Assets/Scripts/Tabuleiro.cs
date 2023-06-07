@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Networking.Transport;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -45,6 +47,9 @@ public class Tabuleiro : MonoBehaviour
     private bool isWhiteTurn; 
     private SpecialMove specialMove;
 
+    private int playerCount = -1;
+    private int currentTeam = -1;
+
     // variaveis 
 
     private void Awake()
@@ -53,6 +58,8 @@ public class Tabuleiro : MonoBehaviour
         GenerateAllTiles(tileSize, TILE_COUNT_X, TILE_COUNT_Y);
         spwanAllPieces();
         positionAllPieces();
+
+        RegisterEvents();
     }
 
     private void Update()
@@ -235,7 +242,7 @@ public class Tabuleiro : MonoBehaviour
         }
     }
 
-     private void positionSinglePieces(int x, int y ,bool force = false){
+    private void positionSinglePieces(int x, int y ,bool force = false){
         chessPiece[x,y].currentX = x;
         chessPiece[x,y].currentY = y;
         chessPiece[x,y].setPosition(getTileCenter(x,y), force);
@@ -617,6 +624,41 @@ public class Tabuleiro : MonoBehaviour
             return true;
         }
         return false;
+
+    }
+
+
+    // server
+    private void RegisterEvents(){
+        NetUtility.S_WELCOME += OnWelcomeServer;
+
+        NetUtility.C_WELCOME += OnWelcomeClient;
+    }
+
+
+    private void UnRegisterEvents(){
+
+    }
+
+
+    //client
+
+    private void OnWelcomeClient(NetMessage msg)
+    {
+        NetWelcome nw = msg as NetWelcome;
+
+        currentTeam = nw.AssignedTeam;
+
+        Debug.Log($"my assigned team is {nw.AssignedTeam}");
+
+    }
+
+    private void OnWelcomeServer(NetMessage msg, NetworkConnection cnn){
+        NetWelcome nw = msg as NetWelcome;
+
+        nw.AssignedTeam = ++playerCount;
+
+        Server.inst.SendToClient(cnn, nw);
 
     }
 
