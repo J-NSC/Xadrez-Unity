@@ -5,10 +5,10 @@ using System;
 
 public class Server : MonoBehaviour
 {
-    public static Server inst {set; get;}
+    public static Server instance {set; get;}
 
     private void Awake() {
-        inst  = this;
+        instance  = this;
     }
 
     public NetworkDriver driver;
@@ -18,7 +18,7 @@ public class Server : MonoBehaviour
     private const float keepAliveTickRate = 20.0f;
     private float lastKeepAlive;
 
-    public Action connetionDropped; 
+    public Action connectionDropped; 
 
     public void Init(ushort port){
         driver = NetworkDriver.Create();
@@ -62,14 +62,6 @@ public class Server : MonoBehaviour
         UpdateMessagePump();
     }
 
-    private void KeepAlive()
-    {
-        if(Time.time - lastKeepAlive > keepAliveTickRate){
-            lastKeepAlive = Time.time;
-            Broadcast(new NetKeepAlive());
-        }
-    }
-
     private void cleanupConnections()
     {
         for(int i = 0; i < connections.Length; i++) {
@@ -77,6 +69,14 @@ public class Server : MonoBehaviour
                 connections.RemoveAtSwapBack(i);
                 --i;
             }
+        }
+    }
+
+    private void KeepAlive()
+    {
+        if(Time.time - lastKeepAlive > keepAliveTickRate){
+            lastKeepAlive = Time.time;
+            Broadcast(new NetKeepAlive());
         }
     }
 
@@ -95,11 +95,11 @@ public class Server : MonoBehaviour
             NetworkEvent.Type cmd; 
             while((cmd = driver.PopEventForConnection(connections[i], out stream)) != NetworkEvent.Type.Empty){
                 if(cmd == NetworkEvent.Type.Data){
-                    // NetUtility.OnData(stream, connections[i], this);
+                    NetUtility.OnData(stream, connections[i], this);
                 }else if(cmd == NetworkEvent.Type.Disconnect){
                     Debug.Log("Client disconnected from server");
                     connections[i] = default(NetworkConnection);
-                    connetionDropped?.Invoke();
+                    connectionDropped?.Invoke();
                     ShutDown();
                 }
             }
@@ -108,10 +108,10 @@ public class Server : MonoBehaviour
 
     // server specific
 
-    public void SendToClient(NetworkConnection connetion, NetMessage msg)
+    public void SendToClient(NetworkConnection connection, NetMessage msg)
     {
         DataStreamWriter writer;
-        driver.BeginSend(connetion, out writer);
+        driver.BeginSend(connection, out writer);
         msg.Serialize(ref writer);
         driver.EndSend(writer); 
     }

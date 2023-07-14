@@ -542,7 +542,6 @@ public class Tabuleiro : MonoBehaviour
                 for (int y = 0; y < TILE_COUNT_Y; y++){
                     if(chessPiece[x, y] != null){
                         simulation[x,y] = chessPiece[x,y];
-                        Debug.Log(simulation[x,y]);
                         if(simulation[x,y].team != cp.team){
                             simAttackingPieces.Add(simulation[x,y]);
                         }
@@ -658,7 +657,7 @@ public class Tabuleiro : MonoBehaviour
 
         nw.AssignedTeam = ++playerCount;
 
-        Server.inst.SendToClient(cnn, nw);
+        Server.instance.SendToClient(cnn, nw);
 
     }
 

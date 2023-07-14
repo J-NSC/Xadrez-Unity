@@ -21,7 +21,7 @@ public static class NetUtility
    public static Action<NetMessage, NetworkConnection> S_WELCOME;
    public static Action<NetMessage, NetworkConnection> S_START_GAME;
    public static Action<NetMessage, NetworkConnection> S_MAKE_MOVE;
-   public static Action<NetMessage, NetworkConnection> S_REMATCH;
+   public static Action<NetMessage, NetworkConnection> S_REMATCH; 
 
    public static void OnData (DataStreamReader stream, NetworkConnection cnn, Server server = null){
         NetMessage msg = null;

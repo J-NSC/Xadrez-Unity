@@ -6,10 +6,10 @@ using UnityEngine;
 
 public class Client : MonoBehaviour
 {
-    public static Client inst {set; get;}
+    public static Client instance {set; get;}
 
     private void Awake() {
-        inst  = this;
+        instance  = this;
     }
 
     public NetworkDriver driver;
@@ -17,9 +17,9 @@ public class Client : MonoBehaviour
 
     private bool isActive = false;
 
-    public Action connetionDropped; 
+    public Action connectionDropped; 
 
-        public void Init(string ip, ushort port){
+    public void Init(string ip, ushort port){
         driver = NetworkDriver.Create();
         NetworkEndPoint endPoint = NetworkEndPoint.Parse(ip, port); 
 
@@ -62,7 +62,7 @@ public class Client : MonoBehaviour
     {
         if(!connection.IsCreated && isActive){
             Debug.Log("Something went wrong, lost connection to server ");
-            connetionDropped?.Invoke();
+            connectionDropped?.Invoke();
             ShutDown();
         }
     }
@@ -78,11 +78,11 @@ public class Client : MonoBehaviour
                 SendToServer(new NetWelcome());
                 Debug.Log("We're connected");
             }else if(cmd == NetworkEvent.Type.Data){
-                // netUtility.OnData(stream, default(NetworkConnection));
+                NetUtility.OnData(stream, default(NetworkConnection));
             }else if(cmd == NetworkEvent.Type.Disconnect){
                 Debug.Log("Client got disconnected from server");
                 connection = default(NetworkConnection);
-                connetionDropped?.Invoke();
+                connectionDropped?.Invoke();
                 ShutDown();
             }
         }
