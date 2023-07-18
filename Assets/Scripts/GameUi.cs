@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,6 +9,10 @@ public class GameUi : MonoBehaviour
 {
     [SerializeField] private Animator menuAnimator; 
     [SerializeField] private TMP_InputField addressInput;
+
+    [SerializeField] private NetworkManager networkManager;
+    [SerializeField] private TMP_Text connectionStatusText;
+
     public static GameUi inst{set; get;}
 
     public Server server;
@@ -20,6 +25,10 @@ public class GameUi : MonoBehaviour
         menuAnimator = GetComponent<Animator>();
     }
 
+
+    public void OnConnect(){
+        networkManager.Connect();
+    }
     public void OnLocalGameButton(){
         menuAnimator.SetTrigger("InGameMenu");
         server.Init(8007);
@@ -49,5 +58,9 @@ public class GameUi : MonoBehaviour
         server.ShutDown();
         client.ShutDown();
         menuAnimator.SetTrigger("OnlineMenu");
+    }
+
+    public void SetConnectionStatus(string status){
+        connectionStatusText.text = status;
     }
 }

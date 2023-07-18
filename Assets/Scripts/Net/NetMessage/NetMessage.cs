@@ -1,3 +1,4 @@
+using System;
 using Unity.Networking.Transport;
 using UnityEngine;
 
@@ -23,4 +24,5 @@ public class NetMessage
     public virtual void ReceivedOnServer(NetworkConnection cnn){
 
     }
+
 }

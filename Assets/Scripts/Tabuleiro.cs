@@ -47,8 +47,10 @@ public class Tabuleiro : MonoBehaviour
     private bool isWhiteTurn; 
     private SpecialMove specialMove;
 
-    private int playerCount = -1;
-    private int currentTeam = -1;
+    private int playerCount = 0;
+    public int currentTeam = 0;
+
+    private NetworkManager networkManager;
 
     // variaveis 
 
@@ -58,12 +60,14 @@ public class Tabuleiro : MonoBehaviour
         GenerateAllTiles(tileSize, TILE_COUNT_X, TILE_COUNT_Y);
         spwanAllPieces();
         positionAllPieces();
-
         RegisterEvents();
+
+        networkManager = FindObjectOfType<NetworkManager>();
     }
 
     private void Update()
     {
+
         if (!currentCamara)
         {
             currentCamara = Camera.main;
@@ -91,7 +95,7 @@ public class Tabuleiro : MonoBehaviour
             if(Input.GetMouseButtonDown(0)){
                 if(chessPiece[hitPosition.x, hitPosition.y] != null){
                     // turno
-                    if( chessPiece[hitPosition.x, hitPosition.y].team == 0 && isWhiteTurn || chessPiece[hitPosition.x, hitPosition.y].team == 1 && !isWhiteTurn){
+                    if( chessPiece[hitPosition.x, hitPosition.y].team == 0 && isWhiteTurn && currentTeam == 0|| chessPiece[hitPosition.x, hitPosition.y].team == 1 && !isWhiteTurn && currentTeam ==1 ){
                         currentlyDragging = chessPiece[hitPosition.x, hitPosition.y];
                         availableMoves = currentlyDragging.GetAvaliabeMoves(ref chessPiece , TILE_COUNT_X ,TILE_COUNT_Y);
                         specialMove = currentlyDragging.GetSpecialMoves(ref chessPiece, ref moveList, ref availableMoves);
@@ -627,11 +631,17 @@ public class Tabuleiro : MonoBehaviour
     }
 
 
+    // teams
+
+    public void selectTeam(int team){
+        currentTeam = team;
+    }
+
     // server
     private void RegisterEvents(){
-        NetUtility.S_WELCOME += OnWelcomeServer;
+        //NetUtility.S_WELCOME += OnWelcomeServer;
 
-        NetUtility.C_WELCOME += OnWelcomeClient;
+        //NetUtility.C_WELCOME += OnWelcomeClient;   
     }
 
 
@@ -642,16 +652,6 @@ public class Tabuleiro : MonoBehaviour
 
     //client
 
-    private void OnWelcomeClient(NetMessage msg)
-    {
-        NetWelcome nw = msg as NetWelcome;
-
-        currentTeam = nw.AssignedTeam;
-
-        Debug.Log($"my assigned team is {nw.AssignedTeam}");
-
-    }
-
     private void OnWelcomeServer(NetMessage msg, NetworkConnection cnn){
         NetWelcome nw = msg as NetWelcome;
 
@@ -660,6 +660,17 @@ public class Tabuleiro : MonoBehaviour
         Server.instance.SendToClient(cnn, nw);
 
     }
+
+    private void OnWelcomeClient(NetMessage msg)
+    {
+        NetWelcome nw = msg as NetWelcome;
+
+        currentTeam = nw.AssignedTeam;
+
+        Debug.LogError($"my assigned team is {nw.AssignedTeam}");
+
+    }
+
 
 }
 
