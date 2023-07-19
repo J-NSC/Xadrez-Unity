@@ -3,12 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
-
+using System.Linq;
 
 public class GameUi : MonoBehaviour
 {
     [SerializeField] private Animator menuAnimator; 
     [SerializeField] private TMP_InputField addressInput;
+    public GameObject[] screem;
 
     [SerializeField] private NetworkManager networkManager;
     [SerializeField] private TMP_Text connectionStatusText;
@@ -62,5 +63,13 @@ public class GameUi : MonoBehaviour
 
     public void SetConnectionStatus(string status){
         connectionStatusText.text = status;
+    }
+
+    public void DisabelAllScreem()
+    {
+        for (int i = 0; i < screem.Count(); i++)
+        {
+            screem[i].SetActive(false);
+        }
     }
 }

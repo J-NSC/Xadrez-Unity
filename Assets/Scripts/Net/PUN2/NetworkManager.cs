@@ -62,18 +62,20 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     }
 
     public void SelectedTeams(int team){
-        tabuleiro.currentTeam = team;
+        tabuleiro.teamsCount = team;
     }
 
     public override void OnJoinedRoom()
     {
         Debug.LogError($"player {PhotonNetwork.LocalPlayer.ActorNumber} joined the room");
         PrepareTeamSelectionOptions();
-        Debug.LogError(tabuleiro.currentTeam);
+        Debug.LogError(tabuleiro.teamsCount);
     }
 
     public override void OnPlayerEnteredRoom(Player newPlayer)
     {
         Debug.LogError($"Player {newPlayer.ActorNumber} entered the room");
+        gameUi.DisabelAllScreem();
+        
     }
 }

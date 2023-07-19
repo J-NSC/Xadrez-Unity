@@ -1,6 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using ExitGames.Client.Photon;
+using Photon.Pun;
+using Photon.Realtime;
 using Unity.Networking.Transport;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,8 +15,11 @@ public enum SpecialMove{
     Promotion
 }
 
-public class Tabuleiro : MonoBehaviour
+public class Tabuleiro : MonoBehaviour, IOnEventCallback
 {
+
+    private const byte SET_GAME_STATE_EVENT = 0;
+
     [Header("art")]
     [SerializeField] private Material tileMaterial;
     [SerializeField] private float tileSize = 1.0f;
@@ -46,13 +52,23 @@ public class Tabuleiro : MonoBehaviour
     private Vector3 bounds;
     private bool isWhiteTurn; 
     private SpecialMove specialMove;
-
+    private PhotonView photonView;
     private int playerCount = 0;
-    public int currentTeam = 0;
+    public int teamsCount = 0;
 
     private NetworkManager networkManager;
 
-    // variaveis 
+
+
+    private void OnEnable()
+    {
+        PhotonNetwork.AddCallbackTarget(this);
+    }
+
+    private void OnDisable()
+    {
+        PhotonNetwork.RemoveCallbackTarget(this);
+    }
 
     private void Awake()
     {
@@ -61,6 +77,7 @@ public class Tabuleiro : MonoBehaviour
         spwanAllPieces();
         positionAllPieces();
         RegisterEvents();
+        photonView = GetComponent<PhotonView>();
 
         networkManager = FindObjectOfType<NetworkManager>();
     }
@@ -73,6 +90,30 @@ public class Tabuleiro : MonoBehaviour
             currentCamara = Camera.main;
             return;
         }
+
+
+        photonView.RPC("selectedPiece", RpcTarget.AllBuffered);
+       
+    }
+    // gerador de tiles
+    private void GenerateAllTiles(float tileSize, int tileCountX, int tileCountY)
+    {
+        yOffset += transform.position.y;
+        bounds = new Vector3((tileCountX / 2) * tileSize, 0, (tileCountX / 2) * tileSize) + boardCenter;
+
+        tiles = new GameObject[tileCountX, tileCountY];
+
+        for (int x = 0; x < tileCountX; x++)
+        {
+            for (int y = 0; y < tileCountY; y++)
+            {
+                tiles[x, y] = GenerateSingleTile(tileSize, x, y);
+            }
+        }
+    }
+
+    [PunRPC]
+    public void selectedPiece(){
         RaycastHit info;
         Ray ray = currentCamara.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out info, 100, LayerMask.GetMask("Tile", "Highlight", "Hover")))
@@ -95,7 +136,7 @@ public class Tabuleiro : MonoBehaviour
             if(Input.GetMouseButtonDown(0)){
                 if(chessPiece[hitPosition.x, hitPosition.y] != null){
                     // turno
-                    if( chessPiece[hitPosition.x, hitPosition.y].team == 0 && isWhiteTurn && currentTeam == 0|| chessPiece[hitPosition.x, hitPosition.y].team == 1 && !isWhiteTurn && currentTeam ==1 ){
+                    if( chessPiece[hitPosition.x, hitPosition.y].team == 0 && isWhiteTurn && teamsCount == 0|| chessPiece[hitPosition.x, hitPosition.y].team == 1 && !isWhiteTurn && teamsCount ==1){
                         currentlyDragging = chessPiece[hitPosition.x, hitPosition.y];
                         availableMoves = currentlyDragging.GetAvaliabeMoves(ref chessPiece , TILE_COUNT_X ,TILE_COUNT_Y);
                         specialMove = currentlyDragging.GetSpecialMoves(ref chessPiece, ref moveList, ref availableMoves);
@@ -139,22 +180,6 @@ public class Tabuleiro : MonoBehaviour
         //     if(horizontalPlane.Raycast(ray, out distannce))
         //         currentlyDragging.setPosition(ray.GetPoint(distannce) + Vector3.up * dragOffset);
         // }
-    }
-    // gerador de tiles
-    private void GenerateAllTiles(float tileSize, int tileCountX, int tileCountY)
-    {
-        yOffset += transform.position.y;
-        bounds = new Vector3((tileCountX / 2) * tileSize, 0, (tileCountX / 2) * tileSize) + boardCenter;
-
-        tiles = new GameObject[tileCountX, tileCountY];
-
-        for (int x = 0; x < tileCountX; x++)
-        {
-            for (int y = 0; y < tileCountY; y++)
-            {
-                tiles[x, y] = GenerateSingleTile(tileSize, x, y);
-            }
-        }
     }
 
     private GameObject GenerateSingleTile(float tileSize, int x, int y)
@@ -250,6 +275,7 @@ public class Tabuleiro : MonoBehaviour
         chessPiece[x,y].currentX = x;
         chessPiece[x,y].currentY = y;
         chessPiece[x,y].setPosition(getTileCenter(x,y), force);
+        SendMovePiece(x,y);
     
     }
 
@@ -303,6 +329,7 @@ public class Tabuleiro : MonoBehaviour
         chessPiece[previousPosition.x, previousPosition.y] = null;
 
         positionSinglePieces(x,y);
+        
 
         isWhiteTurn = ! isWhiteTurn;
         moveList.Add(new Vector2Int[]{previousPosition, new Vector2Int(x,y)} );
@@ -630,11 +657,9 @@ public class Tabuleiro : MonoBehaviour
 
     }
 
-
     // teams
-
     public void selectTeam(int team){
-        currentTeam = team;
+        teamsCount = team;
     }
 
     // server
@@ -644,32 +669,53 @@ public class Tabuleiro : MonoBehaviour
         //NetUtility.C_WELCOME += OnWelcomeClient;   
     }
 
-
     private void UnRegisterEvents(){
 
     }
 
+    public void SendMovePiece(int x , int y)
+    {
+        object[] content = new object[] {chessPiece[x,y]};
+        RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All};
+        PhotonNetwork.RaiseEvent(SET_GAME_STATE_EVENT, content,raiseEventOptions, SendOptions.SendReliable);
+    }
+
+    public void OnEvent(EventData photonEvent)
+    {
+        byte eventCode = photonEvent.Code;
+
+        if (eventCode == SET_GAME_STATE_EVENT)
+        {
+            object[] data = (object[])photonEvent.CustomData;
+
+            Vector3 targetPiece = (Vector2)data[0];
+            positionSinglePieces((int)targetPiece.x, (int)targetPiece.y);
+        }
+    }
+
+
+
 
     //client
 
-    private void OnWelcomeServer(NetMessage msg, NetworkConnection cnn){
-        NetWelcome nw = msg as NetWelcome;
+    // private void OnWelcomeServer(NetMessage msg, NetworkConnection cnn){
+    //     NetWelcome nw = msg as NetWelcome;
 
-        nw.AssignedTeam = ++playerCount;
+    //     nw.AssignedTeam = ++playerCount;
 
-        Server.instance.SendToClient(cnn, nw);
+    //     Server.instance.SendToClient(cnn, nw);
 
-    }
+    // }
 
-    private void OnWelcomeClient(NetMessage msg)
-    {
-        NetWelcome nw = msg as NetWelcome;
+    // private void OnWelcomeClient(NetMessage msg)
+    // {
+    //     NetWelcome nw = msg as NetWelcome;
 
-        currentTeam = nw.AssignedTeam;
+    //     currentTeam = nw.AssignedTeam;
 
-        Debug.LogError($"my assigned team is {nw.AssignedTeam}");
+    //     Debug.LogError($"my assigned team is {nw.AssignedTeam}");
 
-    }
+    // }
 
 
 }
